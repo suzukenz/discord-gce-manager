@@ -126,15 +126,15 @@ func (h *CheckHandler) execute(ctx context.Context, s *discordgo.Session, m *dis
 	}
 
 	for _, gs := range servers {
-		exIP, err := gs.checkServerIsReady(is)
+		exIP, _, err := gs.checkServerIsReady(is)
+
+		var msg string
 		if err != nil {
 			log.Println(err)
-			msg := fmt.Sprintf("%s サーバーは停止しています。", gs.ShowName)
-			s.ChannelMessageSend(m.ChannelID, msg)
-			return nil
+			msg = fmt.Sprintf("%s サーバーは停止しています。", gs.ShowName)
+		} else {
+			msg = fmt.Sprintf("%s サーバーは `%s:%d` で起動中です。", gs.ShowName, exIP, gs.Port)
 		}
-
-		msg := fmt.Sprintf("%s サーバーは `%s:%d` で起動中です。", gs.ShowName, exIP, gs.Port)
 		s.ChannelMessageSend(m.ChannelID, msg)
 	}
 
@@ -248,6 +248,18 @@ func (h *StopHandler) execute(ctx context.Context, s *discordgo.Session, m *disc
 	return nil
 }
 
+// CheckChannelIDHandler implements check channel id.
+type CheckChannelIDHandler struct{}
+
+func (h *CheckChannelIDHandler) validateOptions(cmd string, opts []string) (errMsg string) {
+	return ""
+}
+func (h *CheckChannelIDHandler) execute(ctx context.Context, s *discordgo.Session, m *discordgo.MessageCreate, opts []string) error {
+	msg := fmt.Sprintf("このチャンネルのIDは `%s` です。", m.ChannelID)
+	s.ChannelMessageSend(m.ChannelID, msg)
+	return nil
+}
+
 func newGCEInstanceService(ctx context.Context) (*compute.InstancesService, error) {
 	client, err := google.DefaultClient(ctx, compute.ComputeScope)
 	if err != nil {
@@ -259,4 +271,62 @@ func newGCEInstanceService(ctx context.Context) (*compute.InstancesService, erro
 	}
 
 	return compute.NewInstancesService(computeService), nil
+}
+
+// CheckAllServerWithWebhook get all gameserver difinitions from DataStore and check if server is ready.
+// Results will be sented to Discord Channnel by Webhook.
+func CheckAllServerWithWebhook(ctx context.Context) error {
+	datastoreClient, err := datastore.NewClient(ctx, projectID)
+	if err != nil {
+		return err
+	}
+
+	servers, err := getGameServers(ctx, datastoreClient)
+	if err != nil {
+		return err
+	}
+
+	if len(servers) == 0 {
+		return fmt.Errorf("対象のサーバーが見つかりませんでした。")
+	}
+
+	is, err := newGCEInstanceService(ctx)
+	if err != nil {
+		return err
+	}
+
+	for _, gs := range servers {
+		var msg string
+
+		exIP, status, err := gs.checkServerIsReady(is)
+		if err != nil {
+			log.Println(err)
+			msg = fmt.Sprintf("%s サーバーは停止しています。", gs.ShowName)
+		} else {
+			msg = fmt.Sprintf("%s サーバーは `%s:%d` で起動中です。", gs.ShowName, exIP, gs.Port)
+		}
+
+		if status != gs.LastStatus {
+			if status == StatusReady {
+				msg = fmt.Sprintf("%s サーバーが `%s:%d` で起動完了しました。", gs.ShowName, exIP, gs.Port)
+			}
+			if status == StatusNotReady {
+				msg = fmt.Sprintf("%s サーバーが停止しました。", gs.ShowName)
+			}
+
+			// update to current status.
+			gs.LastStatus = status
+			err := gs.saveToDatastore(ctx, datastoreClient)
+			if err != nil {
+				return err
+			}
+		}
+
+		log.Println(msg)
+		err = sendMessageByWebhook(msg)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }

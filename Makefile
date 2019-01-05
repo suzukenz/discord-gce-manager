@@ -6,6 +6,7 @@ DOCKER_IMAGE_NAME := suzukenz/discord-gce-manger
 
 DISCORD_TOKEN := MY_DISCORD_TOKEN
 PROJECT_ID := MY_GCP_PROJECTID
+DISCORD_WEBHOOK := MY_DISCORD_WEBHOOKURL
 
 all: build
 
@@ -27,8 +28,11 @@ build-linux:
 	$(BUILD_LINUX_OPTS) go build -o bin/linux/$(DISCORD_BOT_NAME) cmd/$(DISCORD_BOT_NAME)/main.go
 	$(BUILD_LINUX_OPTS) go build -o bin/linux/$(CHECK_ALL_NAME) cmd/$(CHECK_ALL_NAME)/main.go
 
-run-%:
-	go run cmd/$*/main.go -t $(DISCORD_TOKEN) -p $(PROJECT_ID)
+run-bot:
+	go run cmd/$(DISCORD_BOT_NAME)/main.go -t $(DISCORD_TOKEN) -p $(PROJECT_ID)
+
+run-checker:
+	go run cmd/$(CHECK_ALL_NAME)/main.go  -t $(DISCORD_TOKEN) -p $(PROJECT_ID) -d $(DISCORD_WEBHOOK)
 
 docker-build: build-linux
 	docker build -t $(DOCKER_IMAGE_NAME) .

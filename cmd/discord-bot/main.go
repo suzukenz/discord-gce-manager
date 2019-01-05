@@ -14,16 +14,16 @@ import (
 
 // Variables used for command line parameters
 var (
-	Token     string
-	ProjectID string
+	token     string
+	projectID string
 )
 
 func init() {
-	flag.StringVar(&Token, "t", "", "Bot Token")
-	flag.StringVar(&ProjectID, "p", "", "GCP ProjectID")
+	flag.StringVar(&token, "t", "", "Bot Token")
+	flag.StringVar(&projectID, "p", "", "GCP ProjectID")
 	flag.Parse()
 
-	internal.SetProjectID(ProjectID)
+	internal.SetProjectID(projectID)
 }
 
 func main() {
@@ -36,6 +36,7 @@ func main() {
 		{command: "/check", handler: new(internal.CheckHandler)},
 		{command: "/run", handler: new(internal.RunHandler)},
 		{command: "/stop", handler: new(internal.StopHandler)},
+		{command: "/channel", handler: new(internal.CheckChannelIDHandler)},
 	} {
 		err := handlers.Add(cmds.command, cmds.handler)
 		if err != nil {
@@ -45,7 +46,7 @@ func main() {
 	}
 
 	// Create a new Discord session using the provided bot token.
-	dg, err := discordgo.New("Bot " + Token)
+	dg, err := discordgo.New("Bot " + token)
 	if err != nil {
 		log.Fatalln("error creating Discord session,", err)
 		return

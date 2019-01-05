@@ -14,6 +14,12 @@ import (
 // EntityName is a name of the entity on Google Cloud Datastore.
 const EntityName = "GameServer"
 
+// StatusReady... are status names.
+const (
+	StatusReady    = "READY"
+	StatusNotReady = "NOT READY"
+)
+
 type gameServer struct {
 	IDName          string
 	ShowName        string
@@ -55,34 +61,34 @@ func (gs *gameServer) checkServerIsRunning(service *compute.InstancesService) (b
 	return (ins.Status == "RUNNING"), nil
 }
 
-func (gs *gameServer) checkServerIsReady(service *compute.InstancesService) (externalIP string, err error) {
+func (gs *gameServer) checkServerIsReady(service *compute.InstancesService) (externalIP string, status string, err error) {
 	ins, err := service.Get(projectID, gs.Zone, gs.InstanceName).Do()
 	if err != nil {
-		return "", fmt.Errorf("error getting instance, err: %s", err)
+		return "", StatusNotReady, fmt.Errorf("error getting instance, err: %s", err)
 	}
 
 	if ins.Status != "RUNNING" {
-		return "", fmt.Errorf("instance is not running :%s", ins.Name)
+		return "", StatusNotReady, fmt.Errorf("instance is not running :%s", ins.Name)
 	}
 
 	if len(ins.NetworkInterfaces) == 0 {
-		return "", fmt.Errorf("error, network interface is not attached :%s", ins.Name)
+		return "", StatusNotReady, fmt.Errorf("error, network interface is not attached :%s", ins.Name)
 	}
 
 	nwIf := ins.NetworkInterfaces[0]
 	if len(nwIf.AccessConfigs) == 0 {
-		return "", fmt.Errorf("error, nothing access configs on network interface, instance:%s, nwif: %s", ins.Name, nwIf.Name)
+		return "", StatusNotReady, fmt.Errorf("error, nothing access configs on network interface, instance:%s, nwif: %s", ins.Name, nwIf.Name)
 	}
 
 	exIP := nwIf.AccessConfigs[0].NatIP
 	if gs.EnablePortCheck {
 		err = scanPort(exIP, gs.Port, 5*time.Second)
 		if err != nil {
-			return "", err
+			return "", StatusNotReady, err
 		}
 	}
 
-	return exIP, nil
+	return exIP, StatusReady, nil
 }
 
 func (gs *gameServer) runServer(service *compute.InstancesService) error {
