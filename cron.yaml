@@ -1,0 +1,5 @@
+cron:
+  - description: "check all game servers"
+    url: /tasks/check
+    schedule: every 5 minutes
+    target: discord-gce-manager

@@ -1,11 +1,10 @@
-DISCORD_BOT_NAME := discord-bot
-CHECK_ALL_NAME := check-all
+APP_NAME := discord-gce-manager
 
 BUILD_LINUX_OPTS := GOOS=linux GOARCH=amd64 CGO_ENABLED=0
 DOCKER_IMAGE_NAME := suzukenz/discord-gce-manger
 
-DISCORD_TOKEN := MY_DISCORD_TOKEN
 PROJECT_ID := MY_GCP_PROJECTID
+DISCORD_TOKEN := MY_DISCORD_TOKEN
 DISCORD_WEBHOOK := MY_DISCORD_WEBHOOKURL
 
 all: build
@@ -13,35 +12,33 @@ all: build
 deps:
 	dep ensure
 
-build/%:
-	go build -o bin/$* cmd/$*/main.go
-
-build-bot:
-	@make build/$(DISCORD_BOT_NAME)
-
-build-checker:
-	@make build/$(CHECK_ALL_NAME)
-
-build: build-bot build-checker
+build:
+	go build -o bin/$(APP_NAME) cmd/$*/main.go
 
 build-linux:
-	$(BUILD_LINUX_OPTS) go build -o bin/linux/$(DISCORD_BOT_NAME) cmd/$(DISCORD_BOT_NAME)/main.go
-	$(BUILD_LINUX_OPTS) go build -o bin/linux/$(CHECK_ALL_NAME) cmd/$(CHECK_ALL_NAME)/main.go
+	$(BUILD_LINUX_OPTS) go build -o bin/linux/$(APP_NAME) .
 
-run-bot:
-	go run cmd/$(DISCORD_BOT_NAME)/main.go -t $(DISCORD_TOKEN) -p $(PROJECT_ID)
-
-run-checker:
-	go run cmd/$(CHECK_ALL_NAME)/main.go  -t $(DISCORD_TOKEN) -p $(PROJECT_ID) -d $(DISCORD_WEBHOOK)
+run:
+	go run ./main.go -p $(PROJECT_ID) -t $(DISCORD_TOKEN) -d $(DISCORD_WEBHOOK)
 
 docker-build: build-linux
-	docker build -t $(DOCKER_IMAGE_NAME) .
+	docker build \
+		-t $(DOCKER_IMAGE_NAME) .
 
-docker-run-local:
+docker-run:
 	docker run \
 		-e GOOGLE_APPLICATION_CREDENTIALS=/config/mygcloud/application_default_credentials.json \
 		-v $(HOME)/.config/gcloud:/config/mygcloud \
-		--rm -ti $(DOCKER_IMAGE_NAME) -t $(DISCORD_TOKEN) -p $(PROJECT_ID)
+		-p 8080:8080 \
+		--rm -ti $(DOCKER_IMAGE_NAME) -p $(PROJECT_ID) -t $(DISCORD_TOKEN) -d $(DISCORD_WEBHOOK)
+
+deploy: deploy-app deploy-cron
+
+deploy-app: docker-build
+	gcloud app deploy
+
+deploy-cron:
+	gcloud app deploy cron.yaml
 
 clean:
 	rm -rf bin/*

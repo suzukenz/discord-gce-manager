@@ -1,6 +1,7 @@
 FROM golang:latest
 LABEL maintainer="suzukenz"
 
+ENV APP_NAME discord-gce-manager
 ENV USER manager
 ENV HOME /home/${USER}
 
@@ -9,6 +10,8 @@ USER ${USER}
 
 WORKDIR ${HOME}
 
-COPY bin/linux/discord-bot .
+COPY bin/linux/${APP_NAME} .
+COPY entrypoint.sh .
 
-ENTRYPOINT [ "./discord-bot" ]
+EXPOSE 8080
+ENTRYPOINT ["./entrypoint.sh"]

@@ -273,9 +273,9 @@ func newGCEInstanceService(ctx context.Context) (*compute.InstancesService, erro
 	return compute.NewInstancesService(computeService), nil
 }
 
-// CheckAllServerWithWebhook get all gameserver difinitions from DataStore and check if server is ready.
-// Results will be sented to Discord Channnel by Webhook.
-func CheckAllServerWithWebhook(ctx context.Context) error {
+// CheckServerChangedWithWebhook get all gameserver difinitions from DataStore and check if server is ready.
+// Results that status changed will be sented to Discord Channnel by Webhook.
+func CheckServerChangedWithWebhook(ctx context.Context) error {
 	datastoreClient, err := datastore.NewClient(ctx, projectID)
 	if err != nil {
 		return err
@@ -298,14 +298,7 @@ func CheckAllServerWithWebhook(ctx context.Context) error {
 	for _, gs := range servers {
 		var msg string
 
-		exIP, status, err := gs.checkServerIsReady(is)
-		if err != nil {
-			log.Println(err)
-			msg = fmt.Sprintf("%s サーバーは停止しています。", gs.ShowName)
-		} else {
-			msg = fmt.Sprintf("%s サーバーは `%s:%d` で起動中です。", gs.ShowName, exIP, gs.Port)
-		}
-
+		exIP, status, _ := gs.checkServerIsReady(is)
 		if status != gs.LastStatus {
 			if status == StatusReady {
 				msg = fmt.Sprintf("%s サーバーが `%s:%d` で起動完了しました。", gs.ShowName, exIP, gs.Port)
@@ -320,12 +313,11 @@ func CheckAllServerWithWebhook(ctx context.Context) error {
 			if err != nil {
 				return err
 			}
-		}
-
-		log.Println(msg)
-		err = sendMessageByWebhook(msg)
-		if err != nil {
-			return err
+			log.Println(msg)
+			err = sendMessageByWebhook(msg)
+			if err != nil {
+				return err
+			}
 		}
 	}
 	return nil

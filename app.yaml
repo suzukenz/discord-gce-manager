@@ -1,0 +1,20 @@
+runtime: custom
+env: flex
+
+service: discord-gce-manager
+
+skip_files:
+  - vendor/.*$
+
+manual_scaling:
+  instances: 1
+
+resources:
+  cpu: 1
+  memory_gb: 0.5
+  disk_size_gb: 10
+
+env_variables:
+  PROJECT_ID: "MY_GCP_PROJECTID"
+  DISCORD_TOKEN: "MY_DISCORD_TOKEN"
+  DISCORD_WEBHOOK: "MY_DISCORD_WEBHOOKURL"

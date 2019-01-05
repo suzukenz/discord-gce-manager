@@ -3,7 +3,9 @@ package main
 import (
 	"context"
 	"flag"
+	"fmt"
 	"log"
+	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
@@ -14,16 +16,19 @@ import (
 
 // Variables used for command line parameters
 var (
-	token     string
-	projectID string
+	token      string
+	projectID  string
+	webhookURL string
 )
 
 func init() {
 	flag.StringVar(&token, "t", "", "Bot Token")
 	flag.StringVar(&projectID, "p", "", "GCP ProjectID")
+	flag.StringVar(&webhookURL, "d", "", "Discord Webhook URL")
 	flag.Parse()
 
 	internal.SetProjectID(projectID)
+	internal.SetWebhookURL(webhookURL)
 }
 
 func main() {
@@ -54,7 +59,6 @@ func main() {
 
 	// Register the messageCreate func as a callback for MessageCreate events.
 	dg.AddHandler(createMessageCreatedHandler(handlers))
-
 	// Open a websocket connection to Discord and begin listening.
 	err = dg.Open()
 	if err != nil {
@@ -62,14 +66,23 @@ func main() {
 		return
 	}
 
+	// Start http server for execute manually by request.
+	srv := startHTTPServer()
+
 	// Wait here until CTRL-C or other term signal is received.
-	log.Println("Discord bot is now running. Press CTRL-C to exit.")
+	log.Println("Discord bot server is now running. Press CTRL-C to exit.")
 	sc := make(chan os.Signal, 1)
 	signal.Notify(sc, syscall.SIGINT, syscall.SIGTERM, os.Interrupt, os.Kill)
 	<-sc
 
 	// Cleanly close down the Discord session.
 	dg.Close()
+
+	// Http server shutdown
+	if err := srv.Shutdown(context.Background()); err != nil {
+		// Error from closing listeners, or context timeout:
+		log.Fatalln("Failed to http server shutdown:", err)
+	}
 }
 
 // Return function will be called (due to AddHandler above) every time a new
@@ -90,4 +103,28 @@ func createMessageCreatedHandler(handlers *internal.Handlers) func(s *discordgo.
 			s.ChannelMessageSend(m.ChannelID, "コマンド実行に失敗しました。")
 		}
 	}
+}
+
+func httpCheckHandler(w http.ResponseWriter, r *http.Request) {
+	ctx := context.Background()
+	err := internal.CheckServerChangedWithWebhook(ctx)
+	if err != nil {
+		log.Fatalln(err)
+	}
+	fmt.Fprintf(w, "execute check ok")
+}
+
+func startHTTPServer() *http.Server {
+	mux := http.NewServeMux()
+	mux.HandleFunc("/tasks/check", httpCheckHandler)
+	srv := &http.Server{
+		Addr:    ":8080",
+		Handler: mux,
+	}
+	go func() {
+		if err := srv.ListenAndServe(); err != http.ErrServerClosed {
+			log.Fatalf("ListenAndServe(): %s", err)
+		}
+	}()
+	return srv
 }
