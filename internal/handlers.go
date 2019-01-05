@@ -13,17 +13,19 @@ import (
 	compute "google.golang.org/api/compute/v1"
 )
 
+// Handler is command executer.
 type Handler interface {
 	validateOptions(cmd string, opts []string) (errMsg string)
 	execute(ctx context.Context,
 		s *discordgo.Session, m *discordgo.MessageCreate, opts []string) error
 }
 
+// Handlers manage and exec Handler.
 type Handlers struct {
-	projectID string
-	handlers  map[string]Handler
+	handlers map[string]Handler
 }
 
+// NewHandlers create and retrun Handlers struct.
 func NewHandlers() *Handlers {
 	handlers := &Handlers{
 		handlers: map[string]Handler{},
@@ -31,6 +33,7 @@ func NewHandlers() *Handlers {
 	return handlers
 }
 
+// Add add Handler to Handlers.
 func (handlers *Handlers) Add(command string, h Handler) error {
 	_, ok := handlers.handlers[command]
 	if ok {
@@ -40,6 +43,7 @@ func (handlers *Handlers) Add(command string, h Handler) error {
 	return nil
 }
 
+// Execute parse command from original message and execute command.
 func (handlers *Handlers) Execute(ctx context.Context, s *discordgo.Session, m *discordgo.MessageCreate, message string) error {
 	if !strings.HasPrefix(message, "/") {
 		// ignore message that not command
@@ -70,6 +74,7 @@ func (handlers *Handlers) Execute(ctx context.Context, s *discordgo.Session, m *
 	return h.execute(ctx, s, m, options)
 }
 
+// CheckHandler implements check gameserver command.
 type CheckHandler struct{}
 
 func (h *CheckHandler) validateOptions(cmd string, opts []string) (errMsg string) {
@@ -136,6 +141,7 @@ func (h *CheckHandler) execute(ctx context.Context, s *discordgo.Session, m *dis
 	return nil
 }
 
+// RunHandler implements run gameserver command.
 type RunHandler struct{}
 
 func (h *RunHandler) validateOptions(cmd string, opts []string) (errMsg string) {
@@ -187,6 +193,7 @@ func (h *RunHandler) execute(ctx context.Context, s *discordgo.Session, m *disco
 	return nil
 }
 
+// StopHandler implements stop gameserver command.
 type StopHandler struct{}
 
 func (h *StopHandler) validateOptions(cmd string, opts []string) (errMsg string) {
