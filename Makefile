@@ -1,4 +1,4 @@
-DISCORD_BOT_NAME := discord-gce-manager
+DISCORD_BOT_NAME := discord-bot
 CHECK_ALL_NAME := check-all
 
 BUILD_LINUX_OPTS := GOOS=linux GOARCH=amd64 CGO_ENABLED=0

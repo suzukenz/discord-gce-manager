@@ -9,6 +9,6 @@ USER ${USER}
 
 WORKDIR ${HOME}
 
-COPY bin/linux/discord-gce-manager .
+COPY bin/linux/discord-bot .
 
-ENTRYPOINT [ "./discord-gce-manager" ]
+ENTRYPOINT [ "./discord-bot" ]
