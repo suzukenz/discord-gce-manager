@@ -273,8 +273,8 @@ func newGCEInstanceService(ctx context.Context) (*compute.InstancesService, erro
 	return compute.NewInstancesService(computeService), nil
 }
 
-// CheckAllServerWithWebhook get all gameserver difinitions from DataStore and check if server is ready.
-// Results will be sented to Discord Channnel by Webhook.
+// CheckServersChangedWithWebhook get all gameserver difinitions from DataStore and check if server is ready.
+// Results that status chenged will be sented to Discord Channnel by Webhook.
 func CheckServersChangedWithWebhook(ctx context.Context) error {
 	datastoreClient, err := datastore.NewClient(ctx, projectID)
 	if err != nil {
