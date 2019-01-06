@@ -2,13 +2,13 @@ package main
 
 import (
 	"context"
-	"flag"
 	"log"
 	"os"
 	"os/signal"
 	"syscall"
 
 	"github.com/bwmarrin/discordgo"
+	"github.com/joho/godotenv"
 	"github.com/suzukenz/discord-gce-manager/internal"
 )
 
@@ -19,9 +19,13 @@ var (
 )
 
 func init() {
-	flag.StringVar(&token, "t", "", "Bot Token")
-	flag.StringVar(&projectID, "p", "", "GCP ProjectID")
-	flag.Parse()
+	err := godotenv.Load("configs.env")
+	if err != nil {
+		log.Fatal("Error loading configs.env file")
+	}
+
+	projectID = os.Getenv("PROJECT_ID")
+	token = os.Getenv("DISCORD_TOKEN")
 
 	internal.SetProjectID(projectID)
 }

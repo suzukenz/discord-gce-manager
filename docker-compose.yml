@@ -1,0 +1,23 @@
+version: "3"
+services:
+  discord-bot:
+    build:
+      context: .
+      dockerfile: ./discord-bot/Dockerfile
+    image: suzukenz/discord-bot
+    # GCloud setting for only local
+    volumes:
+      - /Users/kentony/.config/gcloud:/config/mygcloud
+    environment:
+      # GCloud settings for only local
+      GOOGLE_APPLICATION_CREDENTIALS: /config/mygcloud/application_default_credentials.json
+  checker:
+    build:
+      context: .
+      dockerfile: ./checker/Dockerfile
+    image: suzukenz/gce-checker
+    environment:
+      # GCloud settings for local
+      GOOGLE_APPLICATION_CREDENTIALS: "/config/mygcloud/application_default_credentials.json"
+    volumes:
+      - /Users/kentony/.config/gcloud:/config/mygcloud

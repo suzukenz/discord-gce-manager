@@ -2,9 +2,10 @@ package main
 
 import (
 	"context"
-	"flag"
 	"log"
+	"os"
 
+	"github.com/joho/godotenv"
 	"github.com/suzukenz/discord-gce-manager/internal"
 )
 
@@ -16,10 +17,14 @@ var (
 )
 
 func init() {
-	flag.StringVar(&token, "t", "", "Bot Token")
-	flag.StringVar(&projectID, "p", "", "GCP ProjectID")
-	flag.StringVar(&webhookURL, "d", "", "Discord Webhook URL")
-	flag.Parse()
+	err := godotenv.Load("configs.env")
+	if err != nil {
+		log.Fatal("Error loading configs.env file")
+	}
+
+	projectID = os.Getenv("PROJECT_ID")
+	token = os.Getenv("DISCORD_TOKEN")
+	webhookURL = os.Getenv("DISCORD_WEBHOOK")
 
 	internal.SetProjectID(projectID)
 	internal.SetWebhookURL(webhookURL)
@@ -27,7 +32,7 @@ func init() {
 
 func main() {
 	ctx := context.Background()
-	err := internal.CheckAllServerWithWebhook(ctx)
+	err := internal.CheckServersChangedWithWebhook(ctx)
 	if err != nil {
 		log.Fatalln(err)
 	}

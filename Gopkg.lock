@@ -51,6 +51,12 @@
   version = "v1.4.0"
 
 [[projects]]
+  name = "github.com/joho/godotenv"
+  packages = ["."]
+  revision = "23d116af351c84513e1946b527c88823e476be13"
+  version = "v1.3.0"
+
+[[projects]]
   name = "go.opencensus.io"
   packages = [
     ".",
@@ -223,6 +229,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "a89d9a8569765f244d2553bf966618b7a542d6fd20e1ad1682775445e336bd5b"
+  inputs-digest = "7a1b4c4721a04d2b3939ae66b1e2f5815297be7c39b8bda0d8b8a14a0e8e71b0"
   solver-name = "gps-cdcl"
   solver-version = 1
