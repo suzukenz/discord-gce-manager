@@ -242,7 +242,7 @@ func (h *StopHandler) execute(ctx context.Context, s *discordgo.Session, m *disc
 	if err != nil {
 		return err
 	}
-	msg = fmt.Sprintf("%s サーバーを停止しました。", gs.ShowName)
+	msg = fmt.Sprintf("%s サーバーの停止を開始しました。", gs.ShowName)
 	s.ChannelMessageSend(m.ChannelID, msg)
 
 	return nil
