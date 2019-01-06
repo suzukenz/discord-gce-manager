@@ -30,3 +30,7 @@
 - PROJECT_ID => GCP のプロジェクト ID
 - DISCORD_TOKEN => Discord Bot の Token
 - DISCORD_WEBHOOK => Discord の WebhookURL (Cron 等でアプリ側から送信する用)
+
+## Appendix
+
+[Google App Engine のフレキシブル環境を使おうと思ったけど高いので辞めたブランチ](https://github.com/suzukenz/discord-gce-manager/tree/gae-flexible)
