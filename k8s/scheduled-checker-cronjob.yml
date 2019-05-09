@@ -1,0 +1,34 @@
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+  name: scheduled-checker-cronjob
+
+spec:
+  schedule: "*/2 * * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 1
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+          - image: gcr.io/steamgames-202710/gce-scheduled-checker:latest
+            name: gce-scheduled-checker-container
+            env:
+              - name: PROJECT_ID
+                valueFrom:
+                  configMapKeyRef:
+                    name: project-config
+                    key: gcp.project.id
+              - name: DISCORD_TOKEN
+                valueFrom:
+                  configMapKeyRef:
+                    name: project-config
+                    key: discord.bot.token
+              - name: DISCORD_WEBHOOK
+                valueFrom:
+                  configMapKeyRef:
+                    name: project-config
+                    key: discord.webhookurl
+          restartPolicy: OnFailure

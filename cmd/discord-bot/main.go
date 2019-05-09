@@ -8,41 +8,24 @@ import (
 	"syscall"
 
 	"github.com/bwmarrin/discordgo"
-	"github.com/joho/godotenv"
-	"github.com/suzukenz/discord-gce-manager/internal"
+
+	"github.com/suzukenz/discord-gce-manager/internal/discord-bot/handlers"
+	"github.com/suzukenz/discord-gce-manager/internal/pkg/config"
 )
-
-// Variables used for command line parameters
-var (
-	token     string
-	projectID string
-)
-
-func init() {
-	err := godotenv.Load("configs.env")
-	if err != nil {
-		log.Fatal("Error loading configs.env file")
-	}
-
-	projectID = os.Getenv("PROJECT_ID")
-	token = os.Getenv("DISCORD_TOKEN")
-
-	internal.SetProjectID(projectID)
-}
 
 func main() {
 	// Register commands
-	handlers := internal.NewHandlers()
+	hdls := handlers.NewHandlers()
 	for _, cmds := range []struct {
 		command string
-		handler internal.Handler
+		handler handlers.Handler
 	}{
-		{command: "/check", handler: new(internal.CheckHandler)},
-		{command: "/run", handler: new(internal.RunHandler)},
-		{command: "/stop", handler: new(internal.StopHandler)},
-		{command: "/channel", handler: new(internal.CheckChannelIDHandler)},
+		{command: "/check", handler: new(handlers.CheckHandler)},
+		{command: "/run", handler: new(handlers.RunHandler)},
+		{command: "/stop", handler: new(handlers.StopHandler)},
+		{command: "/channel", handler: new(handlers.CheckChannelIDHandler)},
 	} {
-		err := handlers.Add(cmds.command, cmds.handler)
+		err := hdls.Add(cmds.command, cmds.handler)
 		if err != nil {
 			log.Fatalln(err)
 			return
@@ -50,14 +33,15 @@ func main() {
 	}
 
 	// Create a new Discord session using the provided bot token.
-	dg, err := discordgo.New("Bot " + token)
+	cfg := config.NewConfig()
+	dg, err := discordgo.New("Bot " + cfg.DiscordToken)
 	if err != nil {
 		log.Fatalln("error creating Discord session,", err)
 		return
 	}
 
 	// Register the messageCreate func as a callback for MessageCreate events.
-	dg.AddHandler(createMessageCreatedHandler(handlers))
+	dg.AddHandler(createMessageCreatedHandler(hdls))
 
 	// Open a websocket connection to Discord and begin listening.
 	err = dg.Open()
@@ -78,7 +62,7 @@ func main() {
 
 // Return function will be called (due to AddHandler above) every time a new
 // message is created on any channel that the autenticated bot has access to.
-func createMessageCreatedHandler(handlers *internal.Handlers) func(s *discordgo.Session, m *discordgo.MessageCreate) {
+func createMessageCreatedHandler(handlers *handlers.Handlers) func(s *discordgo.Session, m *discordgo.MessageCreate) {
 	return func(s *discordgo.Session, m *discordgo.MessageCreate) {
 		// Ignore all messages created by the bot itself
 		// This isn't required in this specific example but it's a good practice.

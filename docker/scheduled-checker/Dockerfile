@@ -1,7 +1,7 @@
 FROM golang:latest
 LABEL maintainer="suzukenz"
 
-ENV USER discordbot
+ENV USER scheduled-checker
 ENV HOME /home/${USER}
 
 RUN useradd -m ${USER}
@@ -9,7 +9,6 @@ USER ${USER}
 
 WORKDIR ${HOME}
 
-COPY bin/linux/discord-bot .
-COPY configs.env .
+COPY bin/scheduled-checker .
 
-ENTRYPOINT [ "./discord-bot" ]
+ENTRYPOINT [ "./scheduled-checker" ]
