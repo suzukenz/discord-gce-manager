@@ -1,6 +1,6 @@
 # discord-gce-manager
 
-ほぼ自分用。GCE インスタンスのステータスを調べて DiscordBot で通知する。
+自分用。GCE インスタンスのステータスを調べて DiscordBot で通知する。
 
 ## Usage
 
@@ -25,11 +25,29 @@
 
 ### Configurations
 
-`configs.env`に書いてある以下の設定が必要
+`k8s/configmap.yaml`に色々定義する
 
-- PROJECT_ID => GCP のプロジェクト ID
-- DISCORD_TOKEN => Discord Bot の Token
-- DISCORD_WEBHOOK => Discord の WebhookURL (Cron 等でアプリ側から送信する用)
+- gcp.project.id (PROJECT_ID) => GCP のプロジェクト ID
+- discord.bot.token (DISCORD_TOKEN) => Discord Bot の Token
+- discord.webhookurl (DISCORD_WEBHOOK) => Discord の WebhookURL (Cron 等でアプリ側から送信する用)
+
+ローカルでプログラムを動かすときは `tools/configs.env`に直接環境変数を書いて、シェルで実行する。
+
+### Build
+
+go のコードは以下で build (dep は最初だけ)
+
+```
+dep ensure
+make build
+```
+
+docker は docker-compose を build のためだけに使っている
+
+```
+cd docker
+docker-compose build
+```
 
 ## Appendix
 

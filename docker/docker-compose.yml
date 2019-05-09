@@ -1,0 +1,12 @@
+version: "3"
+services:
+  gce-cheker-bot:
+    build:
+      context: ../
+      dockerfile: ./docker/discord-bot/Dockerfile
+    image: gcr.io/steamgames-202710/gce-cheker-bot
+  gce-scheduled-checker:
+    build:
+      context: ../
+      dockerfile: ./docker/scheduled-checker/Dockerfile
+    image: gcr.io/steamgames-202710/gce-scheduled-checker

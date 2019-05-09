@@ -1,0 +1,37 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: discord-bot-deployment
+
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: gce-checker-bot
+  strategy:
+    type: Recreate
+
+  template:
+    metadata:
+      labels:
+        app: gce-checker-bot
+    spec:
+      containers:
+        - image: gcr.io/steamgames-202710/gce-cheker-bot:latest
+          name: gce-checker-bot-container
+          env:
+            - name: PROJECT_ID
+              valueFrom:
+                configMapKeyRef:
+                  name: project-config
+                  key: gcp.project.id
+            - name: DISCORD_TOKEN
+              valueFrom:
+                configMapKeyRef:
+                  name: project-config
+                  key: discord.bot.token
+            - name: DISCORD_WEBHOOK
+              valueFrom:
+                configMapKeyRef:
+                  name: project-config
+                  key: discord.webhookurl

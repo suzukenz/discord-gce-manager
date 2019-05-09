@@ -1,4 +1,4 @@
-package internal
+package model
 
 import (
 	"context"
@@ -20,7 +20,8 @@ const (
 	StatusNotReady = "NOT READY"
 )
 
-type gameServer struct {
+// GameServer is definition of the game server
+type GameServer struct {
 	IDName          string
 	ShowName        string
 	InstanceName    string
@@ -31,7 +32,8 @@ type gameServer struct {
 	Disable         bool
 }
 
-func (gs *gameServer) saveToDatastore(ctx context.Context, client *datastore.Client) error {
+// SaveToDatastore puts game server definition to datastore.
+func (gs *GameServer) SaveToDatastore(ctx context.Context, client *datastore.Client) error {
 	// (example)
 	// gs := &gameServer{
 	// 	IDName:          "7d2d",
@@ -52,7 +54,8 @@ func (gs *gameServer) saveToDatastore(ctx context.Context, client *datastore.Cli
 	return nil
 }
 
-func (gs *gameServer) checkServerIsRunning(service *compute.InstancesService) (bool, error) {
+// CheckServerIsRunning returns game server is running or not
+func (gs *GameServer) CheckServerIsRunning(service *compute.InstancesService, projectID string) (bool, error) {
 	ins, err := service.Get(projectID, gs.Zone, gs.InstanceName).Do()
 	if err != nil {
 		return false, fmt.Errorf("error getting instance, err: %s", err)
@@ -61,7 +64,8 @@ func (gs *gameServer) checkServerIsRunning(service *compute.InstancesService) (b
 	return (ins.Status == "RUNNING"), nil
 }
 
-func (gs *gameServer) checkServerIsReady(service *compute.InstancesService) (externalIP string, status string, err error) {
+// CheckServerIsReady returns game server is ready or not
+func (gs *GameServer) CheckServerIsReady(service *compute.InstancesService, projectID string) (externalIP string, status string, err error) {
 	ins, err := service.Get(projectID, gs.Zone, gs.InstanceName).Do()
 	if err != nil {
 		return "", StatusNotReady, fmt.Errorf("error getting instance, err: %s", err)
@@ -91,7 +95,8 @@ func (gs *gameServer) checkServerIsReady(service *compute.InstancesService) (ext
 	return exIP, StatusReady, nil
 }
 
-func (gs *gameServer) runServer(service *compute.InstancesService) error {
+// RunServer runs game server on compute engine.
+func (gs *GameServer) RunServer(service *compute.InstancesService, projectID string) error {
 	_, err := service.Start(projectID, gs.Zone, gs.InstanceName).Do()
 	if err != nil {
 		return err
@@ -99,7 +104,8 @@ func (gs *gameServer) runServer(service *compute.InstancesService) error {
 	return nil
 }
 
-func (gs *gameServer) stopServer(service *compute.InstancesService) error {
+// StopServer stops game server on compute engine.
+func (gs *GameServer) StopServer(service *compute.InstancesService, projectID string) error {
 	_, err := service.Stop(projectID, gs.Zone, gs.InstanceName).Do()
 	if err != nil {
 		return err
@@ -122,9 +128,10 @@ func scanPort(ip string, port int, timeout time.Duration) error {
 	return nil
 }
 
-func getGameServers(ctx context.Context, client *datastore.Client) ([]*gameServer, error) {
+// GetGameServers returns all enabled game server definitions from datastore.
+func GetGameServers(ctx context.Context, client *datastore.Client) ([]*GameServer, error) {
 	q := datastore.NewQuery(EntityName).Filter("Disable =", false)
-	servers := make([]*gameServer, 0)
+	servers := make([]*GameServer, 0)
 	_, err := client.GetAll(ctx, q, &servers)
 	if err != nil {
 		return nil, err
@@ -133,10 +140,11 @@ func getGameServers(ctx context.Context, client *datastore.Client) ([]*gameServe
 	return servers, nil
 }
 
-func getGameServer(ctx context.Context, client *datastore.Client, idName string) (*gameServer, error) {
+// GetGameServer returns single game server definition.
+func GetGameServer(ctx context.Context, client *datastore.Client, idName string) (*GameServer, error) {
 	k := datastore.NameKey(EntityName, idName, nil)
 
-	server := new(gameServer)
+	server := new(GameServer)
 	err := client.Get(ctx, k, server)
 	if err != nil {
 		if strings.Contains(err.Error(), "no such entity") {
